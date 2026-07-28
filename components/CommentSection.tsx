@@ -43,22 +43,22 @@ export function CommentSection({
   }
 
   return (
-    <div className="mt-6">
-      <h3 className="font-semibold">ความคิดเห็น</h3>
-      <div className="mt-2 flex flex-col gap-2">
+    <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <h3 className="font-semibold text-zinc-900">ความคิดเห็น</h3>
+      <div className="mt-3 flex flex-col gap-3">
         {comments.length === 0 && (
           <p className="text-sm text-zinc-500">ยังไม่มีความคิดเห็น</p>
         )}
         {comments.map((c) => (
-          <div key={c.id} className="rounded border p-3 text-sm">
-            <p className="font-medium">{c.user.name}</p>
-            <p className="text-zinc-700">{c.content}</p>
+          <div key={c.id} className="rounded-lg bg-zinc-50 p-3 text-sm">
+            <p className="font-medium text-zinc-900">{c.user.name}</p>
+            <p className="mt-0.5 text-zinc-600">{c.content}</p>
           </div>
         ))}
       </div>
-      <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
+      <form onSubmit={handleSubmit} className="mt-4 flex gap-2">
         <input
-          className="flex-1 rounded border px-3 py-2 text-sm"
+          className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           placeholder="เพิ่มความคิดเห็น..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -66,7 +66,7 @@ export function CommentSection({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
         >
           ส่ง
         </button>
