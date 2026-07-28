@@ -55,9 +55,22 @@ export function login(input: { email: string; password: string }) {
   });
 }
 
-export function getTasks(teamId?: string) {
-  const qs = teamId ? `?teamId=${teamId}` : "";
-  return apiFetch(`/api/tasks${qs}`);
+export type TaskFilters = {
+  q?: string;
+  status?: string;
+  priority?: string;
+  assigneeId?: string;
+  sortBy?: string;
+  order?: string;
+};
+
+export function getTasks(filters: TaskFilters = {}) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+  const qs = params.toString();
+  return apiFetch(`/api/tasks${qs ? `?${qs}` : ""}`);
 }
 
 export function createTask(input: {
@@ -65,6 +78,7 @@ export function createTask(input: {
   description?: string;
   priority?: string;
   dueDate?: string;
+  assigneeId?: string;
 }) {
   return apiFetch("/api/tasks", {
     method: "POST",
@@ -93,4 +107,35 @@ export function addComment(taskId: string, content: string) {
 export function getDashboard(teamId?: string) {
   const qs = teamId ? `?teamId=${teamId}` : "";
   return apiFetch(`/api/dashboard${qs}`);
+}
+
+export function getTeamMembers() {
+  return apiFetch("/api/team/members");
+}
+
+export function inviteMember(email: string, role?: string) {
+  return apiFetch("/api/team/invite", {
+    method: "POST",
+    body: JSON.stringify({ email, role }),
+  });
+}
+
+export function getMyInvitations() {
+  return apiFetch("/api/invitations");
+}
+
+export function acceptInvitation(token: string) {
+  return apiFetch(`/api/invitations/${token}/accept`, { method: "POST" });
+}
+
+export function getNotifications() {
+  return apiFetch("/api/notifications");
+}
+
+export function markAllNotificationsRead() {
+  return apiFetch("/api/notifications", { method: "PATCH" });
+}
+
+export function markNotificationRead(id: string) {
+  return apiFetch(`/api/notifications/${id}`, { method: "PATCH" });
 }
