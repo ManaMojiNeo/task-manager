@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { getTasks, getToken, clearToken, ApiError } from "@/lib/api";
 import { TaskList } from "@/components/TaskList";
 import { TaskForm } from "@/components/TaskForm";
+import { NavBar } from "@/components/NavBar";
 
 type Task = {
   id: string;
@@ -41,21 +41,27 @@ export default function TasksPage() {
     load();
   }, [load, router]);
 
-  if (error) return <main className="p-8 text-red-600">{error}</main>;
-  if (!tasks) return <main className="p-8 text-zinc-500">กำลังโหลด...</main>;
-
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">รายการงานทั้งหมด</h1>
-        <Link href="/dashboard" className="text-sm underline">
-          ← กลับ Dashboard
-        </Link>
-      </div>
-      <div className="grid gap-6 sm:grid-cols-[2fr_1fr]">
-        <TaskList tasks={tasks} />
-        <TaskForm onCreated={load} />
-      </div>
-    </main>
+    <div className="min-h-screen bg-zinc-50">
+      <NavBar active="tasks" />
+      <main className="mx-auto max-w-5xl px-6 py-10">
+        {error && <p className="text-red-600">{error}</p>}
+        {!error && !tasks && <p className="text-zinc-500">กำลังโหลด...</p>}
+        {tasks && (
+          <>
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+              รายการงานทั้งหมด
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              จัดการงานของทีมและติดตามความคืบหน้า
+            </p>
+            <div className="mt-8 grid gap-6 sm:grid-cols-[2fr_1fr]">
+              <TaskList tasks={tasks} />
+              <TaskForm onCreated={load} />
+            </div>
+          </>
+        )}
+      </main>
+    </div>
   );
 }
