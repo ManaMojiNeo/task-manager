@@ -1,4 +1,5 @@
 import { TaskCard } from "./TaskCard";
+import { EmptyState } from "./EmptyState";
 
 type Task = {
   id: string;
@@ -6,14 +7,17 @@ type Task = {
   status: "todo" | "in_progress" | "in_review" | "done" | "archived";
   priority: "low" | "medium" | "high" | "urgent";
   dueDate: string | null;
+  assignments?: { assignee: { id: string; name: string } }[];
 };
 
 export function TaskList({ tasks }: { tasks: Task[] }) {
   if (tasks.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500">
-        ยังไม่มีงานในทีมนี้ ลองสร้างงานใหม่ดูสิ
-      </p>
+      <EmptyState
+        icon="✨"
+        title="ยังไม่มีงานในทีมนี้"
+        subtitle="ลองสร้างงานแรกของคุณจากฟอร์มด้านขวา"
+      />
     );
   }
   return (
