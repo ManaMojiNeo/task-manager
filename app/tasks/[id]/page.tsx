@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getTask, updateTask, getToken, clearToken, ApiError } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CommentSection } from "@/components/CommentSection";
+import { NavBar } from "@/components/NavBar";
 
 type TaskDetail = {
   id: string;
@@ -58,41 +59,53 @@ export default function TaskDetailPage() {
     load();
   }
 
-  if (error) return <main className="p-8 text-red-600">{error}</main>;
-  if (!task) return <main className="p-8 text-zinc-500">กำลังโหลด...</main>;
-
   return (
-    <main className="mx-auto max-w-2xl p-8">
-      <Link href="/tasks" className="text-sm underline">
-        ← กลับรายการงาน
-      </Link>
-      <div className="mt-4 flex items-start justify-between gap-2">
-        <h1 className="text-xl font-semibold">{task.title}</h1>
-        <StatusBadge status={task.status} />
-      </div>
-      <p className="mt-2 text-sm text-zinc-500">
-        สร้างโดย {task.creator.name} · ความสำคัญ: {task.priority}
-        {task.dueDate &&
-          ` · ครบกำหนด: ${new Date(task.dueDate).toLocaleDateString("th-TH")}`}
-      </p>
-      {task.description && <p className="mt-4">{task.description}</p>}
+    <div className="min-h-screen bg-zinc-50">
+      <NavBar active="tasks" />
+      <main className="mx-auto max-w-2xl px-6 py-10">
+        <Link href="/tasks" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+          ← กลับรายการงาน
+        </Link>
+        {error && <p className="mt-4 text-red-600">{error}</p>}
+        {!error && !task && <p className="mt-4 text-zinc-500">กำลังโหลด...</p>}
+        {task && (
+          <>
+            <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <h1 className="text-xl font-semibold text-zinc-900">{task.title}</h1>
+                <StatusBadge status={task.status} />
+              </div>
+              <p className="mt-2 text-sm text-zinc-500">
+                สร้างโดย {task.creator.name} · ความสำคัญ: {task.priority}
+                {task.dueDate &&
+                  ` · ครบกำหนด: ${new Date(task.dueDate).toLocaleDateString("th-TH")}`}
+              </p>
+              {task.description && (
+                <p className="mt-4 text-zinc-700">{task.description}</p>
+              )}
 
-      <div className="mt-4">
-        <label className="text-sm text-zinc-500">เปลี่ยนสถานะ: </label>
-        <select
-          className="rounded border px-2 py-1 text-sm"
-          value={task.status}
-          onChange={(e) => handleStatusChange(e.target.value)}
-        >
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </div>
+              <div className="mt-5">
+                <label className="mb-1 block text-xs font-medium text-zinc-600">
+                  เปลี่ยนสถานะ
+                </label>
+                <select
+                  className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  value={task.status}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-      <CommentSection taskId={task.id} comments={task.comments} onAdded={load} />
-    </main>
+            <CommentSection taskId={task.id} comments={task.comments} onAdded={load} />
+          </>
+        )}
+      </main>
+    </div>
   );
 }
