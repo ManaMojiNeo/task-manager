@@ -6,11 +6,11 @@ type StatusCounts = {
   archived: number;
 };
 
-const CARD_CONFIG: { key: keyof StatusCounts; label: string; color: string }[] = [
-  { key: "todo", label: "รอดำเนินการ", color: "border-zinc-300" },
-  { key: "in_progress", label: "กำลังทำ", color: "border-blue-300" },
-  { key: "in_review", label: "รอตรวจสอบ", color: "border-amber-300" },
-  { key: "done", label: "เสร็จแล้ว", color: "border-green-300" },
+const CARD_CONFIG: { key: keyof StatusCounts; label: string; accent: string }[] = [
+  { key: "todo", label: "รอดำเนินการ", accent: "bg-zinc-400" },
+  { key: "in_progress", label: "กำลังทำ", accent: "bg-blue-500" },
+  { key: "in_review", label: "รอตรวจสอบ", accent: "bg-amber-500" },
+  { key: "done", label: "เสร็จแล้ว", accent: "bg-emerald-500" },
 ];
 
 export function SummaryCards({
@@ -21,15 +21,24 @@ export function SummaryCards({
   statusCounts: StatusCounts;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-4">
-      <div className="rounded-lg border-2 border-zinc-900 p-4">
-        <p className="text-sm text-zinc-500">งานทั้งหมด</p>
-        <p className="text-2xl font-bold">{total}</p>
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+          งานทั้งหมด
+        </p>
+        <p className="mt-2 text-3xl font-semibold text-zinc-900">{total}</p>
       </div>
       {CARD_CONFIG.map((card) => (
-        <div key={card.key} className={`rounded-lg border-2 ${card.color} p-4`}>
-          <p className="text-sm text-zinc-500">{card.label}</p>
-          <p className="text-2xl font-bold">{statusCounts[card.key]}</p>
+        <div key={card.key} className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className={`h-2 w-2 rounded-full ${card.accent}`}></span>
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+              {card.label}
+            </p>
+          </div>
+          <p className="mt-2 text-3xl font-semibold text-zinc-900">
+            {statusCounts[card.key]}
+          </p>
         </div>
       ))}
     </div>
