@@ -7,6 +7,9 @@ import { getDashboard, getToken, clearToken, ApiError } from "@/lib/api";
 import { SummaryCards } from "@/components/SummaryCards";
 import { TaskList } from "@/components/TaskList";
 import { NavBar } from "@/components/NavBar";
+import { StatusChart } from "@/components/StatusChart";
+import { SkeletonSummaryCards, SkeletonList } from "@/components/Skeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 type Dashboard = {
   teamId: string;
@@ -54,17 +57,27 @@ export default function DashboardPage() {
       <NavBar active="dashboard" />
       <main className="mx-auto max-w-5xl px-6 py-10">
         {error && <p className="text-red-600">{error}</p>}
-        {!error && !data && <p className="text-zinc-500">กำลังโหลด...</p>}
+
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          ภาพรวมงาน
+        </h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          สรุปสถานะงานทั้งหมดของทีมคุณ
+        </p>
+
+        {!error && !data && (
+          <div className="mt-8">
+            <SkeletonSummaryCards />
+          </div>
+        )}
+
         {data && (
           <>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-              ภาพรวมงาน
-            </h1>
-            <p className="mt-1 text-sm text-zinc-500">
-              สรุปสถานะงานทั้งหมดของทีมคุณ
-            </p>
             <div className="mt-8">
               <SummaryCards total={data.total} statusCounts={data.statusCounts} />
+            </div>
+            <div className="mt-6">
+              <StatusChart total={data.total} statusCounts={data.statusCounts} />
             </div>
             <div className="mt-10">
               <div className="flex items-center justify-between">
@@ -76,10 +89,27 @@ export default function DashboardPage() {
                 </Link>
               </div>
               <div className="mt-4">
-                <TaskList tasks={data.upcoming} />
+                {data.upcoming.length === 0 ? (
+                  <EmptyState
+                    icon="🎉"
+                    title="ไม่มีงานที่ใกล้ครบกำหนด"
+                    subtitle="ทุกอย่างอยู่ภายใต้การควบคุม"
+                  />
+                ) : (
+                  <TaskList tasks={data.upcoming} />
+                )}
               </div>
             </div>
           </>
+        )}
+
+        {!error && !data && (
+          <div className="mt-10">
+            <div className="h-6 w-40 animate-pulse rounded bg-zinc-200" />
+            <div className="mt-4">
+              <SkeletonList count={2} />
+            </div>
+          </div>
         )}
       </main>
     </div>
