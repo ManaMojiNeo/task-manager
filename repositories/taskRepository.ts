@@ -25,17 +25,60 @@ export function findFirstProjectForTeam(teamId: string) {
   });
 }
 
-/** ดึงรายการงานทั้งหมดของทีมหนึ่ง พร้อมผู้รับผิดชอบ เรียงตามวันครบกำหนดจากใกล้ไปไกล (หัวข้อ 15.3) */
-export function findTasksByTeam(teamId: string) {
-  return prisma.task.findMany({
-    where: { project: { teamId } },
+export type TaskFilters = {
+  q?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  assigneeId?: string;
+  sortBy?: "dueDate" | "priority" | "createdAt" | "title";
+  order?: "asc" | "desc";
+};
+
+const PRIORITY_ORDER: Record<TaskPriority, number> = {
+  low: 0,
+  medium: 1,
+  high: 2,
+  urgent: 3,
+};
+
+/** ดึงรายการงานทั้งหมดของทีมหนึ่ง รองรับค้นหา/กรอง/เรียงลำดับ (หัวข้อ 16.5 เพิ่มเติม) */
+export async function findTasksByTeam(teamId: string, filters: TaskFilters = {}) {
+  const where: Prisma.TaskWhereInput = { project: { teamId } };
+
+  if (filters.q && filters.q.trim()) {
+    where.title = { contains: filters.q.trim(), mode: "insensitive" };
+  }
+  if (filters.status) where.status = filters.status;
+  if (filters.priority) where.priority = filters.priority;
+  if (filters.assigneeId) {
+    where.assignments = { some: { userId: filters.assigneeId } };
+  }
+
+  const orderBy: Prisma.TaskOrderByWithRelationInput =
+    filters.sortBy === "title"
+      ? { title: filters.order ?? "asc" }
+      : filters.sortBy === "createdAt"
+      ? { createdAt: filters.order ?? "desc" }
+      : filters.sortBy === "priority"
+      ? { dueDate: "asc" } // priority ไม่เรียงลำดับผ่าน DB โดยตรง จะ sort ซ้ำในหน่วยความจำด้านล่าง
+      : { dueDate: filters.order ?? "asc" };
+
+  const tasks = await prisma.task.findMany({
+    where,
     include: {
       assignments: { include: { assignee: true } },
       creator: { select: { id: true, name: true, email: true } },
       project: { select: { id: true, name: true } },
     },
-    orderBy: { dueDate: "asc" },
+    orderBy,
   });
+
+  if (filters.sortBy === "priority") {
+    const dir = filters.order === "asc" ? 1 : -1;
+    tasks.sort((a, b) => (PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]) * dir);
+  }
+
+  return tasks;
 }
 
 export function findTaskById(id: string) {
@@ -73,6 +116,18 @@ export function updateTask(
 
 export function deleteTask(id: string) {
   return prisma.task.delete({ where: { id } });
+}
+
+/** มอบหมายงานให้สมาชิกคนเดียว (แทนที่ผู้รับผิดชอบเดิมถ้ามี) */
+export async function assignTask(taskId: string, assigneeId: string, assignedBy: string) {
+  await prisma.taskAssignment.deleteMany({ where: { taskId } });
+  return prisma.taskAssignment.create({
+    data: { taskId, userId: assigneeId, assignedBy },
+  });
+}
+
+export function unassignTask(taskId: string) {
+  return prisma.taskAssignment.deleteMany({ where: { taskId } });
 }
 
 export function createComment(taskId: string, userId: string, content: string) {
@@ -116,6 +171,9 @@ export function findUpcomingTasks(teamId: string) {
       dueDate: true,
       status: true,
       priority: true,
+      assignments: {
+        select: { assignee: { select: { id: true, name: true } } },
+      },
     },
   });
 }
