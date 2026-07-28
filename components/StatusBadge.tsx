@@ -9,17 +9,17 @@ const STATUS_LABEL: Record<Status, string> = {
 };
 
 const STATUS_COLOR: Record<Status, string> = {
-  todo: "bg-zinc-100 text-zinc-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  in_review: "bg-amber-100 text-amber-700",
-  done: "bg-green-100 text-green-700",
-  archived: "bg-zinc-200 text-zinc-500",
+  todo: "bg-zinc-100 text-zinc-600",
+  in_progress: "bg-blue-50 text-blue-600",
+  in_review: "bg-amber-50 text-amber-600",
+  done: "bg-emerald-50 text-emerald-600",
+  archived: "bg-zinc-100 text-zinc-400",
 };
 
 export function StatusBadge({ status }: { status: Status }) {
   return (
     <span
-      className={`inline-block rounded px-2 py-1 text-xs font-medium ${STATUS_COLOR[status]}`}
+      className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLOR[status]}`}
     >
       {STATUS_LABEL[status]}
     </span>
