@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth";
 import * as taskService from "@/services/taskService";
 import { ServiceError } from "@/services/taskService";
+import type { TaskFilters } from "@/repositories/taskRepository";
 
 export async function GET(req: NextRequest) {
   const user = await verifyAuth(req);
@@ -9,8 +10,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "ไม่ได้เข้าสู่ระบบ" }, { status: 401 });
   }
   try {
-    const teamId = req.nextUrl.searchParams.get("teamId");
-    const tasks = await taskService.getTasksByTeam(user.id, teamId);
+    const params = req.nextUrl.searchParams;
+    const teamId = params.get("teamId");
+    const filters: TaskFilters = {
+      q: params.get("q") ?? undefined,
+      status: (params.get("status") as TaskFilters["status"]) ?? undefined,
+      priority: (params.get("priority") as TaskFilters["priority"]) ?? undefined,
+      assigneeId: params.get("assigneeId") ?? undefined,
+      sortBy: (params.get("sortBy") as TaskFilters["sortBy"]) ?? undefined,
+      order: (params.get("order") as TaskFilters["order"]) ?? undefined,
+    };
+    const tasks = await taskService.getTasksByTeam(user.id, teamId, filters);
     return NextResponse.json({ tasks });
   } catch (err) {
     if (err instanceof ServiceError) {
