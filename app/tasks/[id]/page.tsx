@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { getTask, updateTask, getToken, clearToken, ApiError } from "@/lib/api";
+import { getTask, updateTask, getTeamMembers, getToken, clearToken, ApiError } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CommentSection } from "@/components/CommentSection";
 import { NavBar } from "@/components/NavBar";
@@ -16,6 +16,7 @@ type TaskDetail = {
   priority: "low" | "medium" | "high" | "urgent";
   dueDate: string | null;
   creator: { id: string; name: string; email: string };
+  assignments: { assignee: { id: string; name: string } }[];
   comments: {
     id: string;
     content: string;
@@ -24,12 +25,15 @@ type TaskDetail = {
   }[];
 };
 
+type Member = { userId: string; user: { id: string; name: string } };
+
 const STATUS_OPTIONS = ["todo", "in_progress", "in_review", "done", "archived"];
 
 export default function TaskDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [task, setTask] = useState<TaskDetail | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -50,6 +54,9 @@ export default function TaskDetailPage() {
       router.push("/login");
       return;
     }
+    getTeamMembers()
+      .then((data) => setMembers(data.members))
+      .catch(() => {});
     load();
   }, [load, router]);
 
@@ -58,6 +65,14 @@ export default function TaskDetailPage() {
     await updateTask(task.id, { status });
     load();
   }
+
+  async function handleAssigneeChange(assigneeId: string) {
+    if (!task) return;
+    await updateTask(task.id, { assigneeId: assigneeId || null });
+    load();
+  }
+
+  const currentAssigneeId = task?.assignments?.[0]?.assignee.id ?? "";
 
   return (
     <div className="min-h-screen bg-zinc-50">
@@ -84,21 +99,40 @@ export default function TaskDetailPage() {
                 <p className="mt-4 text-zinc-700">{task.description}</p>
               )}
 
-              <div className="mt-5">
-                <label className="mb-1 block text-xs font-medium text-zinc-600">
-                  เปลี่ยนสถานะ
-                </label>
-                <select
-                  className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  value={task.status}
-                  onChange={(e) => handleStatusChange(e.target.value)}
-                >
-                  {STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+              <div className="mt-5 flex gap-4">
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs font-medium text-zinc-600">
+                    เปลี่ยนสถานะ
+                  </label>
+                  <select
+                    className="w-full rounded-lg border border-zinc-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    value={task.status}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs font-medium text-zinc-600">
+                    มอบหมายให้
+                  </label>
+                  <select
+                    className="w-full rounded-lg border border-zinc-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    value={currentAssigneeId}
+                    onChange={(e) => handleAssigneeChange(e.target.value)}
+                  >
+                    <option value="">ยังไม่มอบหมาย</option>
+                    {members.map((m) => (
+                      <option key={m.userId} value={m.userId}>
+                        {m.user.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
