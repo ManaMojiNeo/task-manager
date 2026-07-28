@@ -3,11 +3,20 @@
 import { useState } from "react";
 import { createTask, ApiError } from "@/lib/api";
 
-export function TaskForm({ onCreated }: { onCreated: () => void }) {
+type Member = { userId: string; user: { id: string; name: string } };
+
+export function TaskForm({
+  onCreated,
+  members = [],
+}: {
+  onCreated: () => void;
+  members?: Member[];
+}) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("medium");
   const [dueDate, setDueDate] = useState("");
+  const [assigneeId, setAssigneeId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -26,10 +35,17 @@ export function TaskForm({ onCreated }: { onCreated: () => void }) {
 
     setSubmitting(true);
     try {
-      await createTask({ title, description, priority, dueDate: dueDate || undefined });
+      await createTask({
+        title,
+        description,
+        priority,
+        dueDate: dueDate || undefined,
+        assigneeId: assigneeId || undefined,
+      });
       setTitle("");
       setDescription("");
       setDueDate("");
+      setAssigneeId("");
       onCreated();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "เกิดข้อผิดพลาดในระบบ");
@@ -89,6 +105,21 @@ export function TaskForm({ onCreated }: { onCreated: () => void }) {
             onChange={(e) => setDueDate(e.target.value)}
           />
         </div>
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-zinc-600">มอบหมายให้ (ไม่บังคับ)</label>
+        <select
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          value={assigneeId}
+          onChange={(e) => setAssigneeId(e.target.value)}
+        >
+          <option value="">ยังไม่มอบหมาย</option>
+          {members.map((m) => (
+            <option key={m.userId} value={m.userId}>
+              {m.user.name}
+            </option>
+          ))}
+        </select>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
