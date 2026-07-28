@@ -7,9 +7,12 @@ type Task = {
   status: "todo" | "in_progress" | "in_review" | "done" | "archived";
   priority: "low" | "medium" | "high" | "urgent";
   dueDate: string | null;
+  assignments?: { assignee: { id: string; name: string } }[];
 };
 
 export function TaskCard({ task }: { task: Task }) {
+  const assignee = task.assignments?.[0]?.assignee;
+
   return (
     <Link
       href={`/tasks/${task.id}`}
@@ -28,6 +31,14 @@ export function TaskCard({ task }: { task: Task }) {
         {task.dueDate && (
           <span>
             ครบกำหนด {new Date(task.dueDate).toLocaleDateString("th-TH")}
+          </span>
+        )}
+        {assignee && (
+          <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2 py-0.5 font-medium text-indigo-600">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[9px] text-white">
+              {assignee.name.charAt(0).toUpperCase()}
+            </span>
+            {assignee.name}
           </span>
         )}
       </div>
