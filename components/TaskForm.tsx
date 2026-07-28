@@ -39,43 +39,62 @@ export function TaskForm({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-lg border p-4">
-      <h3 className="font-semibold">สร้างงานใหม่</h3>
-      <input
-        className="rounded border px-3 py-2 text-sm"
-        placeholder="ชื่องาน"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <textarea
-        className="rounded border px-3 py-2 text-sm"
-        placeholder="รายละเอียด (ไม่บังคับ)"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
-      <div className="flex gap-3">
-        <select
-          className="rounded border px-3 py-2 text-sm"
-          value={priority}
-          onChange={(e) => setPriority(e.target.value)}
-        >
-          <option value="low">low</option>
-          <option value="medium">medium</option>
-          <option value="high">high</option>
-          <option value="urgent">urgent</option>
-        </select>
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
+    >
+      <h3 className="font-semibold text-zinc-900">สร้างงานใหม่</h3>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-zinc-600">ชื่องาน</label>
         <input
-          type="date"
-          className="rounded border px-3 py-2 text-sm"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          placeholder="เช่น ออกแบบหน้า Dashboard"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
         />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-zinc-600">
+          รายละเอียด (ไม่บังคับ)
+        </label>
+        <textarea
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          placeholder="รายละเอียดเพิ่มเติม"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <label className="mb-1 block text-xs font-medium text-zinc-600">ความสำคัญ</label>
+          <select
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+          >
+            <option value="low">low</option>
+            <option value="medium">medium</option>
+            <option value="high">high</option>
+            <option value="urgent">urgent</option>
+          </select>
+        </div>
+        <div className="flex-1">
+          <label className="mb-1 block text-xs font-medium text-zinc-600">
+            วันครบกำหนด
+          </label>
+          <input
+            type="date"
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
+        </div>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
         disabled={submitting}
-        className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
       >
         {submitting ? "กำลังบันทึก..." : "บันทึกงาน"}
       </button>
