@@ -1,5 +1,8 @@
 import * as taskRepository from "@/repositories/taskRepository";
+import * as notificationService from "@/services/notificationService";
+import { prisma } from "@/lib/prisma";
 import { TaskPriority, TaskStatus } from "@prisma/client";
+import type { TaskFilters } from "@/repositories/taskRepository";
 
 export class ServiceError extends Error {
   constructor(public status: number, message: string) {
@@ -28,9 +31,16 @@ export async function resolveTeamId(userId: string, teamId?: string | null) {
   return membership.teamId;
 }
 
-export async function getTasksByTeam(userId: string, teamId?: string | null) {
+export async function getTasksByTeam(userId: string, teamId?: string | null, filters: TaskFilters = {}) {
   const resolvedTeamId = await resolveTeamId(userId, teamId);
-  return taskRepository.findTasksByTeam(resolvedTeamId);
+  return taskRepository.findTasksByTeam(resolvedTeamId, filters);
+}
+
+async function assertTeamMemberOfTeam(teamId: string, targetUserId: string) {
+  const membership = await taskRepository.findTeamMembership(targetUserId, teamId);
+  if (!membership) {
+    throw new ServiceError(400, "ผู้ที่จะมอบหมายงานให้ต้องเป็นสมาชิกของทีมนี้ก่อน");
+  }
 }
 
 export async function createTask(
@@ -42,15 +52,16 @@ export async function createTask(
     dueDate?: string;
     teamId?: string;
     projectId?: string;
+    assigneeId?: string;
   }
 ) {
   if (!body.title || !body.title.trim()) {
     throw new ServiceError(400, "ต้องระบุชื่องาน (title)");
   }
 
+  const teamId = await resolveTeamId(userId, body.teamId);
   let projectId = body.projectId;
   if (!projectId) {
-    const teamId = await resolveTeamId(userId, body.teamId);
     const project = await taskRepository.findFirstProjectForTeam(teamId);
     if (!project) {
       throw new ServiceError(404, "ทีมนี้ยังไม่มีโปรเจกต์ กรุณาสร้างโปรเจกต์ก่อน");
@@ -58,7 +69,7 @@ export async function createTask(
     projectId = project.id;
   }
 
-  return taskRepository.createTask({
+  const task = await taskRepository.createTask({
     projectId,
     title: body.title.trim(),
     description: body.description,
@@ -66,6 +77,21 @@ export async function createTask(
     dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
     createdBy: userId,
   });
+
+  if (body.assigneeId) {
+    await assertTeamMemberOfTeam(teamId, body.assigneeId);
+    await taskRepository.assignTask(task.id, body.assigneeId, userId);
+    const assigner = await prisma.user.findUnique({ where: { id: userId } });
+    await notificationService.notifyTaskAssigned(
+      body.assigneeId,
+      userId,
+      assigner?.name ?? "เพื่อนร่วมทีม",
+      task.id,
+      task.title
+    );
+  }
+
+  return getTaskOr404(task.id);
 }
 
 async function getTaskOr404(taskId: string) {
@@ -89,12 +115,13 @@ export async function updateTask(
     status?: TaskStatus;
     priority?: TaskPriority;
     dueDate?: string | null;
+    assigneeId?: string | null;
   }
 ) {
   const task = await getTaskOr404(taskId);
   await assertTeamMember(userId, task.project.teamId);
 
-  return taskRepository.updateTask(taskId, {
+  await taskRepository.updateTask(taskId, {
     ...(body.title !== undefined && { title: body.title }),
     ...(body.description !== undefined && { description: body.description }),
     ...(body.status !== undefined && { status: body.status }),
@@ -103,6 +130,25 @@ export async function updateTask(
       dueDate: body.dueDate ? new Date(body.dueDate) : null,
     }),
   });
+
+  if (body.assigneeId !== undefined) {
+    if (body.assigneeId === null) {
+      await taskRepository.unassignTask(taskId);
+    } else {
+      await assertTeamMemberOfTeam(task.project.teamId, body.assigneeId);
+      await taskRepository.assignTask(taskId, body.assigneeId, userId);
+      const assigner = await prisma.user.findUnique({ where: { id: userId } });
+      await notificationService.notifyTaskAssigned(
+        body.assigneeId,
+        userId,
+        assigner?.name ?? "เพื่อนร่วมทีม",
+        taskId,
+        task.title
+      );
+    }
+  }
+
+  return getTaskOr404(taskId);
 }
 
 export async function deleteTask(userId: string, taskId: string) {
@@ -117,7 +163,21 @@ export async function addComment(userId: string, taskId: string, content?: strin
   }
   const task = await getTaskOr404(taskId);
   await assertTeamMember(userId, task.project.teamId);
-  return taskRepository.createComment(taskId, userId, content.trim());
+  const comment = await taskRepository.createComment(taskId, userId, content.trim());
+
+  const recipientIds = [
+    task.createdBy,
+    ...task.assignments.map((a) => a.userId),
+  ];
+  await notificationService.notifyCommentAdded(
+    recipientIds,
+    userId,
+    comment.user.name,
+    taskId,
+    task.title
+  );
+
+  return comment;
 }
 
 export async function getDashboard(userId: string, teamId?: string | null) {
